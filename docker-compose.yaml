@@ -1,0 +1,52 @@
+version: "3.0"
+services:
+  orcl:
+    image: wnameless/oracle-xe-11g
+    ports:
+      - 1521:1521
+      - 5500:5500
+      - 8080:8080
+    environment:
+      - ORACLE_SID=orcl
+      - ORACLE_PDB=datastax
+      - ORACLE_PWD=datastax
+      - ORACLE_ALLOW_REMOTE=true
+    container_name: orcl
+    hostname: orcl
+    volumes:
+      - ./oradata:/opt/oracle/oradata
+  streamdc:
+    image: "tmcgrath/streamsets-datastax"
+    container_name: "streamdc"
+    hostname: streamdc
+    restart: always
+    ports:
+      - 18630:18630
+    volumes:
+      - ./dctutorial:/home/sdc/tutorial/origin2
+      - ./dcdata:/data
+  main_node:
+    image: "datastax/dse-server"
+    container_name: "dse"
+    hostname: dse
+    ports:
+    - "4040:4040"
+    - "7080:7080"
+    - "7199:7199"
+    - "8182:8182"
+    - "8983:8983"
+    - "9042:9042"
+    environment:
+      - DS_LICENSE=accept
+      - CLUSTER_NAME=main
+    # Allow DSE to lock memory with mlock
+    cap_add:
+    - IPC_LOCK
+    ulimits:
+      memlock: -1
+    volumes:
+      - ./data:/var/lib/cassandra/data
+      - ./conf:/config
+      - ./logs:/var/lib/cassandra/commit_logs
+      - ./cache:/var/lib/cassandra/saved_caches
+      - ./confy:/etc/dse/conf
